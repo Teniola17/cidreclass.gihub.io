@@ -1,0 +1,232 @@
+---
+title: "Data Analytic Workflow (Introduction)"
+author: "Emmanuel Adewuyi"
+format: html
+editor: visual
+---
+
+
+By the end of this session, you should be able to:
+
+-   Load and inspect a dataset in R
+
+-   Clean data and handle missing values
+
+-   Create summary tables and visualizations
+
+-   Ask and answer questions with EDA
+
+-   Fit and interpret a simple predictive model
+
+-   Evaluate model performance
+
+-   Export results for reporting
+
+## Load Necessary Packages
+
+```{r}
+required_pkgs <- c(
+"tidyverse",
+"palmerpenguins",
+"skimr",
+"janitor",
+"gtsummary",
+"broom",
+"yardstick",
+"DataExplorer"
+)
+
+to_install <- required_pkgs[!required_pkgs %in% installed.packages()[, "Package"]]
+if (length(to_install) > 0) install.packages(to_install)
+
+library(tidyverse)
+library(palmerpenguins)
+library(skimr)
+library(janitor)
+library(gtsummary)
+library(broom)
+library(yardstick)
+
+```
+
+## Load Dataset
+
+We will be using the Penguin dataset obtainable from the `palmerpenguin` package
+
+```{r}
+data("penguins")
+df <- penguins
+
+glimpse(df)
+
+```
+
+### Data Dictionary
+
+-   species: penguin species
+
+-   island: island in Palmer Archipelago
+
+-   bill_length_mm, bill_depth_mm: bill measurements
+
+-   flipper_length_mm: flipper length
+
+-   body_mass_g: body mass
+
+-   sex: male/female
+
+-   year: year of study
+
+## First checks: shape, missingness, duplicates
+
+```{r}
+dim(df)
+names(df)
+
+df %>% summarise(across(everything(), ~sum(is.na(.))))
+df %>% janitor::get_dupes() %>% head()
+```
+
+## Cleaning & preparation (Feature engineering)
+
+It involves making the data fit enough for modelling.
+
+Typical tasks:
+
+-   Standardize column names
+
+-   Handle missing values
+
+-   Recode factors / fix inconsistent labels
+
+-   Create derived variables
+
+```{r}
+df_clean <- df %>%
+janitor::clean_names() %>%
+mutate(
+species = as.factor(species),
+island  = as.factor(island),
+sex     = as.factor(sex),
+year    = as.factor(year),
+body_mass_kg = body_mass_g / 1000
+)
+
+glimpse(df_clean)
+
+```
+
+### Handle missing data
+
+Here we’ll drop rows missing key modelling variables (simple approach for teaching). Later you can discuss imputation.
+
+```{r}
+df_model <- df_clean %>%
+drop_na(species, bill_length_mm, bill_depth_mm, flipper_length_mm, body_mass_g, sex)
+
+dim(df_model)
+```
+
+## EDA
+
+```{r}
+df_model %>% DataExplorer::plot_histogram()
+```
+
+### Quick overview using `skimr`
+
+```{r}
+skim(df_model)
+
+```
+
+**Some Analytic Questions**
+
+1.  Ask analytic questions (examples)
+
+2.  Do species differ in average body mass?
+
+3.  Which predictors best explain body mass?
+
+4.  Does sex matter after controlling for measurements?
+
+### Summary Tables
+
+#### Numerical Summaries
+
+df_model %\>%
+
+summarise(
+
+n = n(),
+
+mean_mass = mean(body_mass_g),
+
+sd_mass = sd(body_mass_g),
+
+min_mass = min(body_mass_g),
+
+max_mass = max(body_mass_g)
+
+)
+
+```{r}
+df_model %>%
+summarise(
+n = n(),
+mean_mass = mean(body_mass_g),
+sd_mass = sd(body_mass_g),
+min_mass = min(body_mass_g),
+max_mass = max(body_mass_g)
+)
+
+```
+
+#### Group (Categorical) Summaries
+
+```{r}
+df_model %>%
+group_by(species) %>%
+summarise(
+n = n(),
+mean_mass = mean(body_mass_g),
+sd_mass = sd(body_mass_g),
+mean_flipper = mean(flipper_length_mm),
+.groups = "drop"
+) %>%
+arrange(desc(mean_mass))
+```
+
+### Visuals
+
+Distribution of the Body Mass
+
+```{r}
+ggplot(df_model, aes(x = body_mass_g)) +
+geom_histogram(bins = 30) +
+labs(title = "Distribution of Body Mass", x = "Body mass (g)", y = "Count")+ facet_grid(~species)
+
+```
+
+Body Mass by Species
+
+```{r}
+ggplot(df_model, aes(x = species, y = body_mass_g)) +
+geom_violin() +
+labs(title = "Body Mass by Species", x = "Species", y = "Body mass (g)")
+
+```
+
+Relationships
+
+```{r}
+ggplot(df_model, aes(x = flipper_length_mm, y = body_mass_g, color = species)) +
+geom_point(alpha = 0.7) +
+geom_smooth(method = "lm", se = FALSE) +
+labs(
+title = "Body Mass vs Flipper Length",
+x = "Flipper length (mm)",
+y = "Body mass (g)"
+)
+
+```
