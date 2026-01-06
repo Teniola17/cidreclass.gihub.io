@@ -637,6 +637,282 @@ $ body_mass_kg      &lt;dbl&gt; 3.750, 3.800, 3.250, NA, 3.450, 3.650, 3.625, 4.
 </div>
 </section>
 </section>
+<section id="data-story-telling-and-visualisation" class="level1">
+<h1>Data Story telling and Visualisation</h1>
+<section id="what-is-storytelling-with-data" class="level2">
+<h2 class="anchored" data-anchor-id="what-is-storytelling-with-data">1. What is Storytelling with Data?</h2>
+<p><strong>Storytelling</strong> means using data to communicate a message clearly — not just showing charts.</p>
+<p>A good data story has:</p>
+<ul>
+<li><strong>Context</strong> – What problem are we exploring?</li>
+<li><strong>Characters</strong> – Who is affected? (patients, communities, programs)</li>
+<li><strong>Conflict</strong> – What challenge exists?</li>
+<li><strong>Insight</strong> – What patterns do we see?</li>
+<li><strong>Action</strong> – What should be done?</li>
+</ul>
+<blockquote class="blockquote">
+<p><em>Data storytelling = Data + Visuals + Meaning + Action</em></p>
+</blockquote>
+<hr>
+</section>
+<section id="what-is-data-visualization" class="level2">
+<h2 class="anchored" data-anchor-id="what-is-data-visualization">2. What is Data Visualization?</h2>
+<p><strong>Data visualization</strong> is the graphical representation of data to:</p>
+<ul>
+<li>simplify complex information<br>
+</li>
+<li>highlight patterns and trends<br>
+</li>
+<li>support better decisions</li>
+</ul>
+<p>Examples include bar charts, histograms, boxplots, and scatter plots.</p>
+<blockquote class="blockquote">
+<p>Visualization is powerful because the human brain understands images faster than tables.</p>
+</blockquote>
+<hr>
+</section>
+<section id="why-does-it-matter-especially-in-health" class="level2">
+<h2 class="anchored" data-anchor-id="why-does-it-matter-especially-in-health">3. Why Does It Matter (Especially in Health)?</h2>
+<ul>
+<li>Helps health workers <strong>see risks and trends</strong></li>
+<li>Supports <strong>policy decisions</strong></li>
+<li>Makes research <strong>understandable to non-experts</strong></li>
+<li>Encourages <strong>evidence-based actions</strong></li>
+</ul>
+<hr>
+</section>
+<section id="load-packages-dataset-health-example" class="level2">
+<h2 class="anchored" data-anchor-id="load-packages-dataset-health-example">4. Load Packages &amp; Dataset (Health Example)</h2>
+<p>We’ll use the <code>birthwt</code> dataset from the <strong>MASS</strong> package — it explores risk factors for <strong>low birth weight</strong>.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb41"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(MASS)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>
+Attaching package: 'MASS'</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>The following object is masked from 'package:gtsummary':
+
+    select</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>The following object is masked from 'package:dplyr':
+
+    select</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb45"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb45-1"><a href="#cb45-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(dplyr)</span>
+<span id="cb45-2"><a href="#cb45-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggplot2)</span>
+<span id="cb45-3"><a href="#cb45-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb45-4"><a href="#cb45-4" aria-hidden="true" tabindex="-1"></a><span class="fu">data</span>(<span class="st">"birthwt"</span>)</span>
+<span id="cb45-5"><a href="#cb45-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb45-6"><a href="#cb45-6" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(birthwt)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>   low age lwt race smoke ptl ht ui ftv  bwt
+85   0  19 182    2     0   0  0  1   0 2523
+86   0  33 155    3     0   0  0  0   3 2551
+87   0  20 105    1     1   0  0  0   1 2557
+88   0  21 108    1     1   0  0  1   2 2594
+89   0  18 107    1     1   0  0  1   0 2600
+91   0  21 124    3     0   0  0  0   0 2622</code></pre>
+</div>
+</div>
+</section>
+<section id="understand-the-data" class="level2">
+<h2 class="anchored" data-anchor-id="understand-the-data">Understand the data</h2>
+<p>The birthwt data frame has 189 rows and 10 columns. The data were collected at Baystate Medical Center, Springfield, Mass during 1986.</p>
+<ul>
+<li><p>low: indicator of birth weight less than 2.5 kg.</p></li>
+<li><p>age: mother’s age in years.</p></li>
+<li><p>lwt: mother’s weight in pounds at last menstrual period.</p></li>
+<li><p>race: mother’s race (1 = white, 2 = black, 3 = other).</p></li>
+<li><p>smoke: smoking status during pregnancy.</p></li>
+<li><p>ptl: number of previous premature labours.</p></li>
+<li><p>ht: history of hypertension.</p></li>
+<li><p>ui: presence of uterine irritability.</p></li>
+<li><p>ftv: number of physician visits during the first trimester.</p></li>
+<li><p>bwt: birth weight in grams.</p></li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb47"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb47-1"><a href="#cb47-1" aria-hidden="true" tabindex="-1"></a>birthwt <span class="sc">|&gt;</span></span>
+<span id="cb47-2"><a href="#cb47-2" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>      low              age             lwt             race      
+ Min.   :0.0000   Min.   :14.00   Min.   : 80.0   Min.   :1.000  
+ 1st Qu.:0.0000   1st Qu.:19.00   1st Qu.:110.0   1st Qu.:1.000  
+ Median :0.0000   Median :23.00   Median :121.0   Median :1.000  
+ Mean   :0.3122   Mean   :23.24   Mean   :129.8   Mean   :1.847  
+ 3rd Qu.:1.0000   3rd Qu.:26.00   3rd Qu.:140.0   3rd Qu.:3.000  
+ Max.   :1.0000   Max.   :45.00   Max.   :250.0   Max.   :3.000  
+     smoke             ptl               ht                ui        
+ Min.   :0.0000   Min.   :0.0000   Min.   :0.00000   Min.   :0.0000  
+ 1st Qu.:0.0000   1st Qu.:0.0000   1st Qu.:0.00000   1st Qu.:0.0000  
+ Median :0.0000   Median :0.0000   Median :0.00000   Median :0.0000  
+ Mean   :0.3915   Mean   :0.1958   Mean   :0.06349   Mean   :0.1481  
+ 3rd Qu.:1.0000   3rd Qu.:0.0000   3rd Qu.:0.00000   3rd Qu.:0.0000  
+ Max.   :1.0000   Max.   :3.0000   Max.   :1.00000   Max.   :1.0000  
+      ftv              bwt      
+ Min.   :0.0000   Min.   : 709  
+ 1st Qu.:0.0000   1st Qu.:2414  
+ Median :0.0000   Median :2977  
+ Mean   :0.7937   Mean   :2945  
+ 3rd Qu.:1.0000   3rd Qu.:3487  
+ Max.   :6.0000   Max.   :4990  </code></pre>
+</div>
+</div>
+<section id="wrangle-some-variable-in-the-dataset" class="level3">
+<h3 class="anchored" data-anchor-id="wrangle-some-variable-in-the-dataset">Wrangle some variable in the dataset</h3>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb49"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb49-1"><a href="#cb49-1" aria-hidden="true" tabindex="-1"></a>birthwt <span class="sc">|&gt;</span> </span>
+<span id="cb49-2"><a href="#cb49-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">race=</span><span class="fu">factor</span>(race, <span class="at">levels=</span><span class="fu">c</span>(<span class="dv">1</span>,<span class="dv">2</span>,<span class="dv">3</span>), <span class="at">labels=</span><span class="fu">c</span>(<span class="st">"White"</span>, <span class="st">"Black"</span>, <span class="st">"Others"</span>)),</span>
+<span id="cb49-3"><a href="#cb49-3" aria-hidden="true" tabindex="-1"></a>         <span class="at">bwt=</span>bwt<span class="sc">/</span><span class="dv">1000</span>,</span>
+<span id="cb49-4"><a href="#cb49-4" aria-hidden="true" tabindex="-1"></a>         <span class="at">ui=</span><span class="fu">ifelse</span>(ui<span class="sc">==</span><span class="dv">1</span>, <span class="st">"Yes"</span>, <span class="st">"No"</span>),</span>
+<span id="cb49-5"><a href="#cb49-5" aria-hidden="true" tabindex="-1"></a>         <span class="at">ht=</span><span class="fu">ifelse</span>(ht<span class="sc">==</span><span class="dv">1</span>, <span class="st">"Yes"</span>, <span class="st">"No"</span>)) <span class="ot">-&gt;</span> newdf</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb50"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb50-1"><a href="#cb50-1" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(newdf)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>   low age lwt   race smoke ptl ht  ui ftv   bwt
+85   0  19 182  Black     0   0 No Yes   0 2.523
+86   0  33 155 Others     0   0 No  No   3 2.551
+87   0  20 105  White     1   0 No  No   1 2.557
+88   0  21 108  White     1   0 No Yes   2 2.594
+89   0  18 107  White     1   0 No Yes   0 2.600
+91   0  21 124 Others     0   0 No  No   0 2.622</code></pre>
+</div>
+</div>
+</section>
+</section>
+<section id="start-the-story-our-question" class="level2">
+<h2 class="anchored" data-anchor-id="start-the-story-our-question">Start the Story: Our Question</h2>
+<p><em>Does smoking increase the risk of low birth weight?</em></p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb52"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb52-1"><a href="#cb52-1" aria-hidden="true" tabindex="-1"></a>birthwt <span class="ot">&lt;-</span> birthwt <span class="sc">|&gt;</span></span>
+<span id="cb52-2"><a href="#cb52-2" aria-hidden="true" tabindex="-1"></a><span class="fu">mutate</span>(</span>
+<span id="cb52-3"><a href="#cb52-3" aria-hidden="true" tabindex="-1"></a><span class="at">smoke =</span> <span class="fu">factor</span>(smoke, <span class="at">labels =</span> <span class="fu">c</span>(<span class="st">"Non-smoker"</span>, <span class="st">"Smoker"</span>)),</span>
+<span id="cb52-4"><a href="#cb52-4" aria-hidden="true" tabindex="-1"></a><span class="at">low_bw =</span> <span class="fu">ifelse</span>(bwt <span class="sc">&lt;</span> <span class="dv">2500</span>, <span class="st">"Low Birth Weight"</span>, <span class="st">"Normal"</span>)</span>
+<span id="cb52-5"><a href="#cb52-5" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="distribution-of-birthweight" class="level2">
+<h2 class="anchored" data-anchor-id="distribution-of-birthweight">Distribution of Birthweight</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb53"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb53-1"><a href="#cb53-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(birthwt, <span class="fu">aes</span>(bwt)) <span class="sc">+</span></span>
+<span id="cb53-2"><a href="#cb53-2" aria-hidden="true" tabindex="-1"></a><span class="fu">geom_histogram</span>(<span class="at">bins=</span><span class="dv">25</span>) <span class="sc">+</span></span>
+<span id="cb53-3"><a href="#cb53-3" aria-hidden="true" tabindex="-1"></a><span class="fu">labs</span>(</span>
+<span id="cb53-4"><a href="#cb53-4" aria-hidden="true" tabindex="-1"></a><span class="at">title =</span> <span class="st">"Distribution of Birth Weight"</span>,</span>
+<span id="cb53-5"><a href="#cb53-5" aria-hidden="true" tabindex="-1"></a><span class="at">x =</span> <span class="st">"Birth Weight (grams)"</span>,</span>
+<span id="cb53-6"><a href="#cb53-6" aria-hidden="true" tabindex="-1"></a><span class="at">y =</span> <span class="st">"Count"</span></span>
+<span id="cb53-7"><a href="#cb53-7" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="index_files/figure-html/unnamed-chunk-18-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<section id="smoking-vs-birthweight" class="level3">
+<h3 class="anchored" data-anchor-id="smoking-vs-birthweight">Smoking vs Birthweight</h3>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb54"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb54-1"><a href="#cb54-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(birthwt, <span class="fu">aes</span>(<span class="at">x =</span> smoke, <span class="at">y =</span> bwt)) <span class="sc">+</span></span>
+<span id="cb54-2"><a href="#cb54-2" aria-hidden="true" tabindex="-1"></a><span class="fu">geom_boxplot</span>() <span class="sc">+</span></span>
+<span id="cb54-3"><a href="#cb54-3" aria-hidden="true" tabindex="-1"></a><span class="fu">labs</span>(</span>
+<span id="cb54-4"><a href="#cb54-4" aria-hidden="true" tabindex="-1"></a><span class="at">title =</span> <span class="st">"Birth Weight by Smoking Status"</span>,</span>
+<span id="cb54-5"><a href="#cb54-5" aria-hidden="true" tabindex="-1"></a><span class="at">x =</span> <span class="st">"Smoking Status"</span>,</span>
+<span id="cb54-6"><a href="#cb54-6" aria-hidden="true" tabindex="-1"></a><span class="at">y =</span> <span class="st">"Birth Weight (grams)"</span></span>
+<span id="cb54-7"><a href="#cb54-7" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="index_files/figure-html/unnamed-chunk-19-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Risk of Low Birthweight by smoking</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb55"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb55-1"><a href="#cb55-1" aria-hidden="true" tabindex="-1"></a>birthwt <span class="sc">|&gt;</span></span>
+<span id="cb55-2"><a href="#cb55-2" aria-hidden="true" tabindex="-1"></a><span class="fu">count</span>(smoke, low_bw)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>       smoke           low_bw  n
+1 Non-smoker Low Birth Weight 29
+2 Non-smoker           Normal 86
+3     Smoker Low Birth Weight 30
+4     Smoker           Normal 44</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb57"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb57-1"><a href="#cb57-1" aria-hidden="true" tabindex="-1"></a>birthwt <span class="sc">|&gt;</span></span>
+<span id="cb57-2"><a href="#cb57-2" aria-hidden="true" tabindex="-1"></a><span class="fu">count</span>(smoke, low_bw) <span class="sc">|&gt;</span></span>
+<span id="cb57-3"><a href="#cb57-3" aria-hidden="true" tabindex="-1"></a><span class="fu">mutate</span>(<span class="at">p =</span> n <span class="sc">/</span> <span class="fu">sum</span>(n)) <span class="sc">|&gt;</span></span>
+<span id="cb57-4"><a href="#cb57-4" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(<span class="fu">aes</span>(smoke, p, <span class="at">fill =</span> low_bw)) <span class="sc">+</span></span>
+<span id="cb57-5"><a href="#cb57-5" aria-hidden="true" tabindex="-1"></a><span class="fu">geom_col</span>(<span class="at">position =</span> <span class="st">"fill"</span>) <span class="sc">+</span></span>
+<span id="cb57-6"><a href="#cb57-6" aria-hidden="true" tabindex="-1"></a><span class="fu">labs</span>(</span>
+<span id="cb57-7"><a href="#cb57-7" aria-hidden="true" tabindex="-1"></a><span class="at">title =</span> <span class="st">"Proportion of Low Birth Weight by Smoking"</span>,</span>
+<span id="cb57-8"><a href="#cb57-8" aria-hidden="true" tabindex="-1"></a><span class="at">x =</span> <span class="st">"Smoking Status"</span>,</span>
+<span id="cb57-9"><a href="#cb57-9" aria-hidden="true" tabindex="-1"></a><span class="at">y =</span> <span class="st">"Proportion"</span></span>
+<span id="cb57-10"><a href="#cb57-10" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="index_files/figure-html/unnamed-chunk-21-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="others" class="level3">
+<h3 class="anchored" data-anchor-id="others">Others</h3>
+<p><em>Does mother’s race affect the risk of low birth weight?</em></p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb58"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb58-1"><a href="#cb58-1" aria-hidden="true" tabindex="-1"></a>newdf2 <span class="ot">&lt;-</span> newdf <span class="sc">|&gt;</span></span>
+<span id="cb58-2"><a href="#cb58-2" aria-hidden="true" tabindex="-1"></a><span class="fu">mutate</span>(</span>
+<span id="cb58-3"><a href="#cb58-3" aria-hidden="true" tabindex="-1"></a><span class="at">smoke =</span> <span class="fu">factor</span>(smoke, <span class="at">labels =</span> <span class="fu">c</span>(<span class="st">"Non-smoker"</span>, <span class="st">"Smoker"</span>)),</span>
+<span id="cb58-4"><a href="#cb58-4" aria-hidden="true" tabindex="-1"></a><span class="at">low_bw =</span> <span class="fu">ifelse</span>(bwt <span class="sc">&lt;</span> <span class="dv">2500</span>, <span class="st">"Low Birth Weight"</span>, <span class="st">"Normal"</span>)</span>
+<span id="cb58-5"><a href="#cb58-5" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="mothers-race-vs-birthweight" class="level3">
+<h3 class="anchored" data-anchor-id="mothers-race-vs-birthweight">Mother’s race vs Birthweight</h3>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb59"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb59-1"><a href="#cb59-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(newdf, <span class="fu">aes</span>(<span class="at">x =</span> race, <span class="at">y =</span> bwt)) <span class="sc">+</span></span>
+<span id="cb59-2"><a href="#cb59-2" aria-hidden="true" tabindex="-1"></a><span class="fu">geom_boxplot</span>() <span class="sc">+</span></span>
+<span id="cb59-3"><a href="#cb59-3" aria-hidden="true" tabindex="-1"></a><span class="fu">labs</span>(</span>
+<span id="cb59-4"><a href="#cb59-4" aria-hidden="true" tabindex="-1"></a><span class="at">title =</span> <span class="st">"Birth Weight by Mother's race"</span>,</span>
+<span id="cb59-5"><a href="#cb59-5" aria-hidden="true" tabindex="-1"></a><span class="at">x =</span> <span class="st">"Mother's race"</span>,</span>
+<span id="cb59-6"><a href="#cb59-6" aria-hidden="true" tabindex="-1"></a><span class="at">y =</span> <span class="st">"Birth Weight (grams)"</span></span>
+<span id="cb59-7"><a href="#cb59-7" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="index_files/figure-html/unnamed-chunk-23-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Risk of Low Birthweight by Race</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb60"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb60-1"><a href="#cb60-1" aria-hidden="true" tabindex="-1"></a>birthwt <span class="sc">|&gt;</span></span>
+<span id="cb60-2"><a href="#cb60-2" aria-hidden="true" tabindex="-1"></a><span class="fu">count</span>(race, low_bw) <span class="sc">|&gt;</span></span>
+<span id="cb60-3"><a href="#cb60-3" aria-hidden="true" tabindex="-1"></a><span class="fu">mutate</span>(<span class="at">p =</span> n <span class="sc">/</span> <span class="fu">sum</span>(n)) <span class="sc">|&gt;</span></span>
+<span id="cb60-4"><a href="#cb60-4" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(<span class="fu">aes</span>(race, p, <span class="at">fill =</span> low_bw)) <span class="sc">+</span></span>
+<span id="cb60-5"><a href="#cb60-5" aria-hidden="true" tabindex="-1"></a><span class="fu">geom_col</span>(<span class="at">position =</span> <span class="st">"fill"</span>) <span class="sc">+</span></span>
+<span id="cb60-6"><a href="#cb60-6" aria-hidden="true" tabindex="-1"></a><span class="fu">labs</span>(</span>
+<span id="cb60-7"><a href="#cb60-7" aria-hidden="true" tabindex="-1"></a><span class="at">title =</span> <span class="st">"Proportion of Low Birth Weight by Race"</span>,</span>
+<span id="cb60-8"><a href="#cb60-8" aria-hidden="true" tabindex="-1"></a><span class="at">x =</span> <span class="st">"Mother's race"</span>,</span>
+<span id="cb60-9"><a href="#cb60-9" aria-hidden="true" tabindex="-1"></a><span class="at">y =</span> <span class="st">"Proportion"</span></span>
+<span id="cb60-10"><a href="#cb60-10" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="index_files/figure-html/unnamed-chunk-24-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+</section>
+</section>
 
 </main>
 <!-- /main column -->

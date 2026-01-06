@@ -230,3 +230,223 @@ y = "Body mass (g)"
 )
 
 ```
+
+
+
+# Data Story telling and Visualisation
+
+## 1. What is Storytelling with Data?
+
+**Storytelling** means using data to communicate a message clearly — not just showing charts.
+
+A good data story has:
+
+- **Context** – What problem are we exploring?
+- **Characters** – Who is affected? (patients, communities, programs)
+- **Conflict** – What challenge exists?
+- **Insight** – What patterns do we see?
+- **Action** – What should be done?
+
+> *Data storytelling = Data + Visuals + Meaning + Action*
+
+---
+
+## 2. What is Data Visualization?
+
+**Data visualization** is the graphical representation of data to:
+
+- simplify complex information  
+- highlight patterns and trends  
+- support better decisions  
+
+Examples include bar charts, histograms, boxplots, and scatter plots.
+
+> Visualization is powerful because the human brain understands images faster than tables.
+
+---
+
+## 3. Why Does It Matter (Especially in Health)?
+
+- Helps health workers **see risks and trends**
+- Supports **policy decisions**
+- Makes research **understandable to non-experts**
+- Encourages **evidence-based actions**
+
+---
+
+## 4. Load Packages & Dataset (Health Example)
+
+We’ll use the `birthwt` dataset from the **MASS** package — it explores risk factors for **low birth weight**.
+
+```{r}
+library(MASS)
+library(dplyr)
+library(ggplot2)
+
+data("birthwt")
+
+head(birthwt)
+
+```
+
+## Understand the data
+
+The birthwt data frame has 189 rows and 10 columns. The data were collected at Baystate Medical Center, Springfield, Mass during 1986.
+
+- low: indicator of birth weight less than 2.5 kg.
+
+- age: mother's age in years.
+
+- lwt: mother's weight in pounds at last menstrual period.
+
+- race: mother's race (1 = white, 2 = black, 3 = other).
+
+- smoke: smoking status during pregnancy.
+
+- ptl: number of previous premature labours.
+
+- ht: history of hypertension.
+
+- ui: presence of uterine irritability.
+
+- ftv: number of physician visits during the first trimester.
+
+- bwt: birth weight in grams.
+
+```{r}
+birthwt |>
+summary()
+```
+
+### Wrangle some variable in the dataset
+
+```{r}
+birthwt |> 
+  mutate(race=factor(race, levels=c(1,2,3), labels=c("White", "Black", "Others")),
+         bwt=bwt/1000,
+         ui=ifelse(ui==1, "Yes", "No"),
+         ht=ifelse(ht==1, "Yes", "No")) -> newdf
+```
+
+
+```{r}
+head(newdf)
+
+```
+
+
+
+## Start the Story: Our Question
+
+*Does smoking increase the risk of low birth weight?*
+
+```{r}
+birthwt <- birthwt |>
+mutate(
+smoke = factor(smoke, labels = c("Non-smoker", "Smoker")),
+low_bw = ifelse(bwt < 2500, "Low Birth Weight", "Normal")
+)
+
+```
+
+
+## Distribution of Birthweight
+
+```{r}
+ggplot(birthwt, aes(bwt)) +
+geom_histogram(bins=25) +
+labs(
+title = "Distribution of Birth Weight",
+x = "Birth Weight (grams)",
+y = "Count"
+)
+
+```
+
+
+
+
+### Smoking vs Birthweight
+
+```{r}
+ggplot(birthwt, aes(x = smoke, y = bwt)) +
+geom_boxplot() +
+labs(
+title = "Birth Weight by Smoking Status",
+x = "Smoking Status",
+y = "Birth Weight (grams)"
+)
+
+```
+
+
+Risk of Low Birthweight by smoking
+
+
+```{r}
+birthwt |>
+count(smoke, low_bw)
+```
+
+
+```{r}
+birthwt |>
+count(smoke, low_bw) |>
+mutate(p = n / sum(n)) |>
+ggplot(aes(smoke, p, fill = low_bw)) +
+geom_col(position = "fill") +
+labs(
+title = "Proportion of Low Birth Weight by Smoking",
+x = "Smoking Status",
+y = "Proportion"
+)
+
+```
+
+### Others
+
+*Does mother's race affect the risk of low birth weight?*
+
+```{r}
+newdf2 <- newdf |>
+mutate(
+smoke = factor(smoke, labels = c("Non-smoker", "Smoker")),
+low_bw = ifelse(bwt < 2500, "Low Birth Weight", "Normal")
+)
+
+```
+
+
+
+
+
+
+### Mother's race vs Birthweight
+
+```{r}
+ggplot(newdf, aes(x = race, y = bwt)) +
+geom_boxplot() +
+labs(
+title = "Birth Weight by Mother's race",
+x = "Mother's race",
+y = "Birth Weight (grams)"
+)
+
+```
+
+
+Risk of Low Birthweight by Race
+
+```{r}
+birthwt |>
+count(race, low_bw) |>
+mutate(p = n / sum(n)) |>
+ggplot(aes(race, p, fill = low_bw)) +
+geom_col(position = "fill") +
+labs(
+title = "Proportion of Low Birth Weight by Race",
+x = "Mother's race",
+y = "Proportion"
+)
+
+```
