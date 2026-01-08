@@ -231,6 +231,260 @@ y = "Body mass (g)"
 
 ```
 
+ 
+
+
+# ============================================================
+# ML classification on palmerpenguins using tidymodels
+# Predict species from morphology (bill/ﬂipper/body mass) + sex/island/year
+# ============================================================
+
+# Packages
+
+```{r}
+library(tidymodels)
+library(palmerpenguins)
+library(tidyverse)
+tidymodels_prefer()
+set.seed(123)
+```
+
+
+
+# ---------------------------
+# 1) Data
+# ---------------------------
+```{r}
+# Load dataset
+data("penguins", package = "palmerpenguins") 
+
+# Clean dataset
+peng <- penguins %>%
+  dplyr::select(species, island, bill_length_mm, bill_depth_mm,
+                flipper_length_mm, body_mass_g, sex, year) %>%
+  drop_na(species, island, bill_length_mm, bill_depth_mm,
+          flipper_length_mm, body_mass_g, sex, year) %>%
+  mutate(
+    species = factor(species),
+    island  = factor(island),
+    sex     = factor(sex),
+    year    = factor(year)  # categorical; numeric if needed
+  )
+```
+
+
+# ---------------------------
+# 2) Split + CV folds
+# ---------------------------
+
+```{r}
+split <- initial_split(peng, prop = 0.80, strata = species)
+train <- training(split)
+test  <- testing(split)
+
+folds <- vfold_cv(train, v = 5, strata = species)
+```
+
+
+# ---------------------------
+# 3) Recipe (preprocessing)
+# ---------------------------
+
+```{r}
+rec <- recipe(species ~ ., data = train) %>%
+  step_dummy(all_nominal_predictors()) %>%
+  step_zv(all_predictors()) %>%
+  step_normalize(all_numeric_predictors())
+```
+
+
+# ---------------------------
+# 4) Model specs
+# ---------------------------
+
+# (A) Multinomial logistic regression (glmnet)
+
+```{r}
+log_spec <- multinom_reg(mode = "classification",
+                         penalty = tune(), mixture = tune()) %>%
+  set_engine("glmnet")
+```
+
+
+# (B) Random forest
+```{r}
+rf_spec <- rand_forest(
+  mode  = "classification",
+  trees = 1000,
+  mtry  = tune(),
+  min_n = tune()
+) %>%
+  set_engine("ranger", importance = "impurity")
+
+```
+
+
+# Workflows
+```{r}
+log_wf <- workflow() %>% add_recipe(rec) %>% add_model(log_spec)
+rf_wf  <- workflow() %>% add_recipe(rec) %>% add_model(rf_spec)
+```
+
+
+# ---------------------------
+# 5) Tuning grids
+# ---------------------------
+# Grid for glmnet
+
+```{r}
+log_grid <- grid_regular(
+  penalty(range = c(-4, 0)),  # 10^-4 to 10^0
+  mixture(range = c(0, 1)),
+  levels = c(20, 6)
+)
+```
+
+
+# Grid for RF (mtry finalized after recipe is prepped)
+```{r}
+
+rf_grid <- grid_space_filling(
+  mtry(range = c(2L, 9)),
+  min_n(range = c(5L, 20L)),
+  size = 25
+)
+
+
+
+```
+
+# Metrics
+```{r}
+cls_metrics <- metric_set(accuracy, kap, mn_log_loss, roc_auc)
+```
+
+
+# ---------------------------
+# 6) Tune with CV
+# ---------------------------
+```{r}
+log_res <- tune_grid(
+  log_wf,
+  resamples = folds,
+  grid      = log_grid,
+  metrics   = cls_metrics,
+  control   = control_grid(save_pred = TRUE)
+)
+```
+
+
+```{r}
+rf_res <- tune_grid(
+  rf_wf,
+  resamples = folds,
+  grid      = rf_grid,
+  metrics   = cls_metrics,
+  control   = control_grid(save_pred = TRUE)
+)
+```
+
+
+# Compare (pick by accuracy; you can use log_loss too)
+```{r}
+collect_metrics(log_res) %>% arrange(desc(mean)) %>% print(n = 10)
+collect_metrics(rf_res)  %>% arrange(desc(mean)) %>% print(n = 10)
+
+best_log <- select_best(log_res, metric = "accuracy")
+best_rf  <- select_best(rf_res,  metric = "accuracy")
+
+best_log
+best_rf
+```
+
+
+# ---------------------------
+# 7) Finalize + fit on train, evaluate on test
+# ---------------------------
+```{r}
+final_log_wf <- finalize_workflow(log_wf, best_log)
+final_rf_wf  <- finalize_workflow(rf_wf,  best_rf)
+
+final_log_fit <- last_fit(final_log_wf, split = split, metrics = cls_metrics)
+final_rf_fit  <- last_fit(final_rf_wf,  split = split, metrics = cls_metrics)
+```
+
+
+# Test metrics
+```{r}
+collect_metrics(final_log_fit)
+collect_metrics(final_rf_fit)
+
+```
+
+# Confusion matrix on test (for RF; repeat for LOG if you want)
+```{r}
+log_test_preds <- collect_predictions(final_log_fit)
+log_test_preds %>%conf_mat(truth = species, estimate = .pred_class)
+
+rf_test_preds <- collect_predictions(final_rf_fit)
+rf_test_preds %>%
+  conf_mat(truth = species, estimate = .pred_class)
+
+rf_test_preds %>%
+  accuracy(truth = species, estimate = .pred_class)
+```
+
+
+# ---------------------------
+# 8) Fit the best model on ALL training data and save
+# ---------------------------
+# Choose winner based on test accuracy
+```{r}
+log_acc <- collect_metrics(final_log_fit) %>% filter(.metric == "accuracy") %>% pull(.estimate)
+rf_acc  <- collect_metrics(final_rf_fit)  %>% filter(.metric == "accuracy") %>% pull(.estimate)
+
+winner <- ifelse(rf_acc >= log_acc, "rf", "log")
+winner
+
+final_wf <- if (winner == "rf") final_rf_wf else final_log_wf
+
+final_model_fit <- fit(final_wf, data = train)
+```
+
+
+# Save workflow (includes preprocessing + model)
+```{r}
+saveRDS(final_model_fit, file = "penguins_tidymodels_workflow.rds")
+```
+
+
+# ---------------------------
+# 9) Predict on new data / test set
+# ---------------------------
+```{r}
+test_class <- predict(final_model_fit, new_data = test, type = "class")
+test_prob  <- predict(final_model_fit, new_data = test, type = "prob")
+
+pred_out <- bind_cols(
+  test %>% select(species),
+  test_class,
+  test_prob
+)
+
+head(pred_out)
+```
+
+
+# Optional: variable importance (RF only)
+```{r}
+if (winner == "rf") {
+  final_model_fit %>%
+    extract_fit_parsnip() %>%
+    vip::vip(num_features = 15)
+}
+```
+
+
 
 
 # Data Story telling and Visualisation
@@ -450,3 +704,9 @@ y = "Proportion"
 )
 
 ```
+
+
+The answer to the questions are evident from the visualisations.
+
+It is easier for even a layman to answer the research questions.
+
