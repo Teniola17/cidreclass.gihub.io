@@ -5,7 +5,6 @@ format: html
 editor: visual
 ---
 
-
 By the end of this session, you should be able to:
 
 -   Load and inspect a dataset in R
@@ -231,12 +230,12 @@ y = "Body mass (g)"
 
 ```
 
- 
-
-
 # ============================================================
+
 # ML classification on palmerpenguins using tidymodels
+
 # Predict species from morphology (bill/ﬂipper/body mass) + sex/island/year
+
 # ============================================================
 
 # Packages
@@ -249,11 +248,12 @@ tidymodels_prefer()
 set.seed(123)
 ```
 
-
-
 # ---------------------------
+
 # 1) Data
+
 # ---------------------------
+
 ```{r}
 # Load dataset
 data("penguins", package = "palmerpenguins") 
@@ -272,9 +272,10 @@ peng <- penguins %>%
   )
 ```
 
-
 # ---------------------------
+
 # 2) Split + CV folds
+
 # ---------------------------
 
 ```{r}
@@ -285,9 +286,10 @@ test  <- testing(split)
 folds <- vfold_cv(train, v = 5, strata = species)
 ```
 
-
 # ---------------------------
+
 # 3) Recipe (preprocessing)
+
 # ---------------------------
 
 ```{r}
@@ -297,9 +299,10 @@ rec <- recipe(species ~ ., data = train) %>%
   step_normalize(all_numeric_predictors())
 ```
 
-
 # ---------------------------
+
 # 4) Model specs
+
 # ---------------------------
 
 # (A) Multinomial logistic regression (glmnet)
@@ -310,8 +313,8 @@ log_spec <- multinom_reg(mode = "classification",
   set_engine("glmnet")
 ```
 
-
 # (B) Random forest
+
 ```{r}
 rf_spec <- rand_forest(
   mode  = "classification",
@@ -323,17 +326,19 @@ rf_spec <- rand_forest(
 
 ```
 
-
 # Workflows
+
 ```{r}
 log_wf <- workflow() %>% add_recipe(rec) %>% add_model(log_spec)
 rf_wf  <- workflow() %>% add_recipe(rec) %>% add_model(rf_spec)
 ```
 
+# ---------------------------
+
+# 5) Tuning grids
 
 # ---------------------------
-# 5) Tuning grids
-# ---------------------------
+
 # Grid for glmnet
 
 ```{r}
@@ -344,8 +349,8 @@ log_grid <- grid_regular(
 )
 ```
 
-
 # Grid for RF (mtry finalized after recipe is prepped)
+
 ```{r}
 
 rf_grid <- grid_space_filling(
@@ -359,14 +364,17 @@ rf_grid <- grid_space_filling(
 ```
 
 # Metrics
+
 ```{r}
 cls_metrics <- metric_set(accuracy, kap, mn_log_loss, roc_auc)
 ```
 
+# ---------------------------
+
+# 6) Tune with CV
 
 # ---------------------------
-# 6) Tune with CV
-# ---------------------------
+
 ```{r}
 log_res <- tune_grid(
   log_wf,
@@ -376,7 +384,6 @@ log_res <- tune_grid(
   control   = control_grid(save_pred = TRUE)
 )
 ```
-
 
 ```{r}
 rf_res <- tune_grid(
@@ -388,8 +395,8 @@ rf_res <- tune_grid(
 )
 ```
 
-
 # Compare (pick by accuracy; you can use log_loss too)
+
 ```{r}
 collect_metrics(log_res) %>% arrange(desc(mean)) %>% print(n = 10)
 collect_metrics(rf_res)  %>% arrange(desc(mean)) %>% print(n = 10)
@@ -401,10 +408,12 @@ best_log
 best_rf
 ```
 
+# ---------------------------
+
+# 7) Finalize + fit on train, evaluate on test
 
 # ---------------------------
-# 7) Finalize + fit on train, evaluate on test
-# ---------------------------
+
 ```{r}
 final_log_wf <- finalize_workflow(log_wf, best_log)
 final_rf_wf  <- finalize_workflow(rf_wf,  best_rf)
@@ -413,8 +422,8 @@ final_log_fit <- last_fit(final_log_wf, split = split, metrics = cls_metrics)
 final_rf_fit  <- last_fit(final_rf_wf,  split = split, metrics = cls_metrics)
 ```
 
-
 # Test metrics
+
 ```{r}
 collect_metrics(final_log_fit)
 collect_metrics(final_rf_fit)
@@ -422,6 +431,7 @@ collect_metrics(final_rf_fit)
 ```
 
 # Confusion matrix on test (for RF; repeat for LOG if you want)
+
 ```{r}
 log_test_preds <- collect_predictions(final_log_fit)
 log_test_preds %>%conf_mat(truth = species, estimate = .pred_class)
@@ -434,11 +444,14 @@ rf_test_preds %>%
   accuracy(truth = species, estimate = .pred_class)
 ```
 
+# ---------------------------
+
+# 8) Fit the best model on ALL training data and save
 
 # ---------------------------
-# 8) Fit the best model on ALL training data and save
-# ---------------------------
+
 # Choose winner based on test accuracy
+
 ```{r}
 log_acc <- collect_metrics(final_log_fit) %>% filter(.metric == "accuracy") %>% pull(.estimate)
 rf_acc  <- collect_metrics(final_rf_fit)  %>% filter(.metric == "accuracy") %>% pull(.estimate)
@@ -451,16 +464,18 @@ final_wf <- if (winner == "rf") final_rf_wf else final_log_wf
 final_model_fit <- fit(final_wf, data = train)
 ```
 
-
 # Save workflow (includes preprocessing + model)
+
 ```{r}
 saveRDS(final_model_fit, file = "penguins_tidymodels_workflow.rds")
 ```
 
+# ---------------------------
+
+# 9) Predict on new data / test set
 
 # ---------------------------
-# 9) Predict on new data / test set
-# ---------------------------
+
 ```{r}
 test_class <- predict(final_model_fit, new_data = test, type = "class")
 test_prob  <- predict(final_model_fit, new_data = test, type = "prob")
@@ -474,8 +489,8 @@ pred_out <- bind_cols(
 head(pred_out)
 ```
 
-
 # Optional: variable importance (RF only)
+
 ```{r}
 if (winner == "rf") {
   final_model_fit %>%
@@ -483,9 +498,6 @@ if (winner == "rf") {
     vip::vip(num_features = 15)
 }
 ```
-
-
-
 
 # Data Story telling and Visualisation
 
@@ -495,38 +507,38 @@ if (winner == "rf") {
 
 A good data story has:
 
-- **Context** – What problem are we exploring?
-- **Characters** – Who is affected? (patients, communities, programs)
-- **Conflict** – What challenge exists?
-- **Insight** – What patterns do we see?
-- **Action** – What should be done?
+-   **Context** – What problem are we exploring?
+-   **Characters** – Who is affected? (patients, communities, programs)
+-   **Conflict** – What challenge exists?
+-   **Insight** – What patterns do we see?
+-   **Action** – What should be done?
 
 > *Data storytelling = Data + Visuals + Meaning + Action*
 
----
+------------------------------------------------------------------------
 
 ## 2. What is Data Visualization?
 
 **Data visualization** is the graphical representation of data to:
 
-- simplify complex information  
-- highlight patterns and trends  
-- support better decisions  
+-   simplify complex information\
+-   highlight patterns and trends\
+-   support better decisions
 
 Examples include bar charts, histograms, boxplots, and scatter plots.
 
 > Visualization is powerful because the human brain understands images faster than tables.
 
----
+------------------------------------------------------------------------
 
 ## 3. Why Does It Matter (Especially in Health)?
 
-- Helps health workers **see risks and trends**
-- Supports **policy decisions**
-- Makes research **understandable to non-experts**
-- Encourages **evidence-based actions**
+-   Helps health workers **see risks and trends**
+-   Supports **policy decisions**
+-   Makes research **understandable to non-experts**
+-   Encourages **evidence-based actions**
 
----
+------------------------------------------------------------------------
 
 ## 4. Load Packages & Dataset (Health Example)
 
@@ -547,25 +559,25 @@ head(birthwt)
 
 The birthwt data frame has 189 rows and 10 columns. The data were collected at Baystate Medical Center, Springfield, Mass during 1986.
 
-- low: indicator of birth weight less than 2.5 kg.
+-   low: indicator of birth weight less than 2.5 kg.
 
-- age: mother's age in years.
+-   age: mother's age in years.
 
-- lwt: mother's weight in pounds at last menstrual period.
+-   lwt: mother's weight in pounds at last menstrual period.
 
-- race: mother's race (1 = white, 2 = black, 3 = other).
+-   race: mother's race (1 = white, 2 = black, 3 = other).
 
-- smoke: smoking status during pregnancy.
+-   smoke: smoking status during pregnancy.
 
-- ptl: number of previous premature labours.
+-   ptl: number of previous premature labours.
 
-- ht: history of hypertension.
+-   ht: history of hypertension.
 
-- ui: presence of uterine irritability.
+-   ui: presence of uterine irritability.
 
-- ftv: number of physician visits during the first trimester.
+-   ftv: number of physician visits during the first trimester.
 
-- bwt: birth weight in grams.
+-   bwt: birth weight in grams.
 
 ```{r}
 birthwt |>
@@ -582,13 +594,10 @@ birthwt |>
          ht=ifelse(ht==1, "Yes", "No")) -> newdf
 ```
 
-
 ```{r}
 head(newdf)
 
 ```
-
-
 
 ## Start the Story: Our Question
 
@@ -603,7 +612,6 @@ low_bw = ifelse(bwt < 2500, "Low Birth Weight", "Normal")
 
 ```
 
-
 ## Distribution of Birthweight
 
 ```{r}
@@ -616,9 +624,6 @@ y = "Count"
 )
 
 ```
-
-
-
 
 ### Smoking vs Birthweight
 
@@ -633,15 +638,12 @@ y = "Birth Weight (grams)"
 
 ```
 
-
 Risk of Low Birthweight by smoking
-
 
 ```{r}
 birthwt |>
 count(smoke, low_bw)
 ```
-
 
 ```{r}
 birthwt |>
@@ -670,11 +672,6 @@ low_bw = ifelse(bwt < 2500, "Low Birth Weight", "Normal")
 
 ```
 
-
-
-
-
-
 ### Mother's race vs Birthweight
 
 ```{r}
@@ -687,7 +684,6 @@ y = "Birth Weight (grams)"
 )
 
 ```
-
 
 Risk of Low Birthweight by Race
 
@@ -705,8 +701,12 @@ y = "Proportion"
 
 ```
 
-
 The answer to the questions are evident from the visualisations.
 
 It is easier for even a layman to answer the research questions.
 
+# CRISP-DM, Data Mining methodology
+
+CRISP-DM stands for Cross-Industry Standard Process for Data Mining. It’s a widely adopted framework that outlines the steps involved in a data analytics or data science project. Its primary purpose is to provide a systematic approach, ensuring that projects are well-defined, managed, and deliver valuable results. By adhering to a structured methodology, organizations can improve the efficiency and effectiveness of their data science initiatives, reducing the risk of costly errors and ensuring alignment with business objectives.
+
+![CRISP-DM Image](index_files/figure-html/images.png){width="407"}
